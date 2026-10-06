@@ -1,0 +1,739 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\title{
+    A Multi-Agent Search-Based Network Attack and Defense Simulation
+}
+
+\author{
+    Fundamentals of Artificial Intelligence\\
+    23CSE401
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+This project presents a multi-agent artificial intelligence simulation of a
+network attack and defense scenario. The system models an attacker attempting
+to reach a critical database through a simulated computer network while a
+defender attempts to prevent the attack by patching, isolating, and monitoring
+hosts.
+
+The project applies classical AI search techniques including A* search,
+Minimax, and Alpha-Beta pruning. Random and greedy strategies are also used as
+baselines. The system evaluates attack paths, models competing attacker and
+defender decisions, demonstrates the resulting search tree, and compares the
+computational cost of Minimax and Alpha-Beta pruning.
+
+The experiments show that Alpha-Beta pruning can significantly reduce the
+number of explored search nodes while producing the same decision and
+evaluation score as Minimax.
+
+\end{abstract}
+
+
+\tableofcontents
+
+\newpage
+
+
+% ============================================================
+\section{Introduction}
+% ============================================================
+
+Artificial intelligence search techniques can be used to model decision
+making in environments where an agent must select actions from a set of
+possible alternatives.
+
+This case study applies multi-agent search to a simulated network security
+scenario. An attacker attempts to move through a network and reach a critical
+database, while a defender attempts to prevent this from happening.
+
+The problem is modeled as a competitive, turn-based game. The attacker acts
+as the maximizing player and the defender acts as the minimizing player.
+A* search is used for attack-path planning, while Minimax and Alpha-Beta
+pruning are used to model strategic interaction between the two agents.
+
+The implementation is entirely simulation-based. It does not perform attacks
+against real systems.
+
+
+% ============================================================
+\section{Problem Domain and Problem Statement}
+% ============================================================
+
+\subsection{Problem Domain}
+
+The problem domain is network attack and defense.
+
+The simulated network contains multiple interconnected hosts with different
+values and vulnerabilities. The attacker starts from the Internet and attempts
+to reach the database. The defender attempts to prevent the attacker from
+reaching the target.
+
+\subsection{Problem Statement}
+
+The objective is to design a multi-agent AI system in which an attacker and a
+defender interact within a simulated network.
+
+The attacker must select actions that help it move toward the target database,
+while the defender selects actions that make the attack more difficult.
+
+The system should:
+
+\begin{itemize}
+    \item represent the network as a weighted graph;
+    \item model attacker and defender actions;
+    \item find attack paths using A* search;
+    \item model competing decisions using Minimax;
+    \item improve Minimax efficiency using Alpha-Beta pruning;
+    \item compare intelligent strategies with simpler baselines;
+    \item demonstrate normal and difficult cases; and
+    \item analyze search complexity.
+\end{itemize}
+
+
+% ============================================================
+\section{System Description}
+% ============================================================
+
+The network is represented as a weighted graph.
+
+The simulated hosts are:
+
+\begin{itemize}
+    \item Internet
+    \item Workstation
+    \item Web Server
+    \item Application Server
+    \item Database
+    \item Admin PC
+    \item File Server
+    \item Backup Server
+\end{itemize}
+
+Each host contains information such as its type, value, vulnerabilities,
+patch status, compromise status, monitoring status, and isolation status.
+
+Connections between hosts have different traversal costs.
+
+The database is treated as the critical target of the attacker.
+
+
+% ============================================================
+\section{Agents}
+% ============================================================
+
+\subsection{Attacker Agent}
+
+The attacker starts at the Internet and attempts to reach the database.
+
+The attacker can:
+
+\begin{itemize}
+    \item exploit a vulnerable connected host;
+    \item move through the network as hosts are compromised; and
+    \item wait.
+\end{itemize}
+
+The attacker's objective is to maximize its evaluation score and ultimately
+reach the target.
+
+\subsection{Defender Agent}
+
+The defender attempts to prevent the attacker from reaching the database.
+
+The defender can:
+
+\begin{itemize}
+    \item patch vulnerable hosts;
+    \item isolate hosts;
+    \item monitor hosts; and
+    \item wait.
+\end{itemize}
+
+The defender attempts to minimize the attacker's evaluation score.
+
+
+% ============================================================
+\section{PEAS Description}
+% ============================================================
+
+\subsection{Performance Measure}
+
+For the attacker, the performance measure includes:
+
+\begin{itemize}
+    \item reaching the target database;
+    \item reducing the cost of the attack path; and
+    \item compromising valuable hosts.
+\end{itemize}
+
+For the defender, the performance measure includes:
+
+\begin{itemize}
+    \item preventing access to the database;
+    \item increasing the attacker's remaining path cost; and
+    \item reducing available attack routes.
+\end{itemize}
+
+\subsection{Environment}
+
+The environment is a simulated computer network represented as a weighted
+graph. It contains hosts, network connections, vulnerabilities, patch states,
+isolation states, monitoring states, and compromised hosts.
+
+\subsection{Actuators}
+
+The attacker actuators are:
+
+\begin{itemize}
+    \item Exploit
+    \item Wait
+\end{itemize}
+
+The defender actuators are:
+
+\begin{itemize}
+    \item Patch
+    \item Isolate
+    \item Monitor
+    \item Wait
+\end{itemize}
+
+\subsection{Sensors}
+
+The agents use information from the simulated environment, including:
+
+\begin{itemize}
+    \item current attacker position;
+    \item network connections;
+    \item host vulnerabilities;
+    \item patch status;
+    \item isolation status;
+    \item compromised hosts; and
+    \item target location.
+\end{itemize}
+
+
+% ============================================================
+\section{Environment Properties}
+% ============================================================
+
+The environment is characterized as follows.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{0.25\textwidth} p{0.65\textwidth}}
+\toprule
+\textbf{Property} & \textbf{Classification and Justification} \\
+\midrule
+
+Observability &
+Fully observable. The search algorithm has access to the simulated network
+state, including host vulnerabilities, patches, isolation, and compromise
+information. \\
+
+Determinism &
+Deterministic. A valid action produces a predictable next state. \\
+
+Episodic / Sequential &
+Sequential. Current actions modify the network state and affect future
+decisions. \\
+
+Static / Dynamic &
+Dynamic. The state of the network changes as the attacker and defender take
+actions. \\
+
+Discrete / Continuous &
+Discrete. Hosts, actions, turns, and game states are represented using
+discrete values. \\
+
+Single-agent / Multi-agent &
+Multi-agent. An attacker and a defender interact in the same environment. \\
+
+Cooperative / Competitive &
+Competitive. The attacker attempts to reach the target while the defender
+attempts to prevent this. \\
+
+\bottomrule
+\end{tabular}
+\caption{Environment properties}
+\end{table}
+
+
+% ============================================================
+\section{Agent Type}
+% ============================================================
+
+The attacker and defender are modeled as goal-based, utility-driven agents.
+
+The attacker selects actions based on their expected effect on its evaluation
+score and its ability to reach the database.
+
+The defender selects actions based on their effect on reducing the attacker's
+evaluation score and restricting possible attack paths.
+
+The agents are competitive rather than cooperative because their objectives
+conflict.
+
+The Minimax formulation treats the attacker as the MAX player and the
+defender as the MIN player.
+
+This is a simplified turn-based model of adversarial decision making rather
+than a claim that real-world cyber attackers and defenders always behave as
+strictly alternating zero-sum players.
+
+
+% ============================================================
+\section{State Representation}
+% ============================================================
+
+A game state contains:
+
+\begin{itemize}
+    \item attacker position;
+    \item target host;
+    \item compromised hosts;
+    \item patched hosts;
+    \item isolated hosts;
+    \item current turn;
+    \item current search depth; and
+    \item the network graph.
+\end{itemize}
+
+The state is modified whenever an attacker or defender action is applied.
+
+The target is considered reached when the database appears in the set of
+compromised hosts.
+
+
+% ============================================================
+\section{Search Techniques}
+% ============================================================
+
+\subsection{A* Search}
+
+A* search is used to determine a low-cost feasible attack path from the
+attacker's current position to the target.
+
+A* uses:
+
+\begin{equation}
+f(n) = g(n) + h(n)
+\end{equation}
+
+where $g(n)$ is the cost accumulated from the starting state and $h(n)$ is an
+estimate of the remaining cost.
+
+The implementation uses the weighted shortest-path distance to the target as
+the heuristic. The path generation also respects security restrictions such
+as patched and isolated hosts.
+
+One observed initial search produced:
+
+\begin{verbatim}
+Internet -> Web Server -> Application Server -> Database
+\end{verbatim}
+
+with total path cost:
+
+\[
+1 + 1 + 2 = 4.
+\]
+
+\subsection{Minimax}
+
+Minimax models the interaction between the attacker and defender.
+
+The attacker is the MAX player and attempts to maximize the evaluation score.
+
+The defender is the MIN player and attempts to minimize the evaluation score.
+
+The algorithm recursively explores possible future actions up to a specified
+search depth.
+
+\subsection{Alpha-Beta Pruning}
+
+Alpha-Beta pruning optimizes Minimax by removing branches that cannot affect
+the final decision.
+
+The algorithm maintains two bounds:
+
+\begin{itemize}
+    \item $\alpha$: the best value currently guaranteed to MAX;
+    \item $\beta$: the best value currently guaranteed to MIN.
+\end{itemize}
+
+A branch can be pruned when:
+
+\begin{equation}
+\beta \leq \alpha
+\end{equation}
+
+Alpha-Beta should produce the same decision and evaluation score as Minimax
+when both algorithms use the same depth and evaluation function.
+
+
+% ============================================================
+\section{Evaluation Function}
+% ============================================================
+
+The evaluation function evaluates a state from the attacker's perspective.
+
+A higher score represents a better state for the attacker.
+
+The evaluation considers:
+
+\begin{itemize}
+    \item whether the target has been reached;
+    \item the A* attack-path cost;
+    \item the values of compromised hosts;
+    \item the number of isolated hosts; and
+    \item the number of patched hosts.
+\end{itemize}
+
+The simplified evaluation is based on the following components:
+
+\begin{equation}
+Score =
+PathScore +
+CompromisedValue -
+IsolationPenalty -
+PatchPenalty
+\end{equation}
+
+Reaching the target receives a very large positive score, while reaching the
+maximum search depth without success receives a very low score.
+
+
+% ============================================================
+\section{Search Tree and State Space}
+% ============================================================
+
+The search tree represents possible sequences of attacker and defender
+actions.
+
+The initial state is:
+
+\begin{itemize}
+    \item Attacker position: Internet
+    \item Target: Database
+    \item Turn: Attacker
+\end{itemize}
+
+At the first level, the attacker can choose actions such as:
+
+\begin{itemize}
+    \item Exploit Web Server
+    \item Exploit Workstation
+    \item Wait
+\end{itemize}
+
+The defender then generates possible responses such as:
+
+\begin{itemize}
+    \item Patch a vulnerable host
+    \item Isolate a host
+    \item Monitor a host
+    \item Wait
+\end{itemize}
+
+The implemented search-tree demonstration was executed to depth 2 and
+generated these attacker branches and their corresponding defender branches.
+
+The search tree demonstrates that the number of possible states grows
+rapidly because each agent has multiple available actions.
+
+
+% ============================================================
+\section{Working Cases and Edge Cases}
+% ============================================================
+
+\subsection{Working Case 1: Normal Attack}
+
+The attacker follows a valid route:
+
+\begin{verbatim}
+Internet -> Web Server -> Application Server -> Database
+\end{verbatim}
+
+The target is successfully reached.
+
+Experimental result:
+
+\begin{verbatim}
+Working Case 1: True
+\end{verbatim}
+
+\subsection{Working Case 2: Defender Intervention}
+
+The defender patches the Admin PC before the attacker can use that route.
+
+The attacker can still attempt another route, demonstrating that defensive
+actions modify the available attack space.
+
+Experimental result:
+
+\begin{verbatim}
+Working Case 2: False
+\end{verbatim}
+
+The database is not reached in this scenario.
+
+\subsection{Edge Case 1: Unreachable Target}
+
+The defender isolates both entry routes from the Internet:
+
+\begin{itemize}
+    \item Web Server
+    \item Workstation
+\end{itemize}
+
+The attacker therefore has no feasible route into the internal network.
+
+Experimental result:
+
+\begin{verbatim}
+Edge Case 1: False
+\end{verbatim}
+
+\subsection{Edge Case 2: Maximum Search Depth}
+
+The maximum depth is deliberately reduced to two actions.
+
+The attacker and defender both wait, causing the search to reach its maximum
+depth before the target is reached.
+
+Experimental result:
+
+\begin{verbatim}
+Edge Case 2: depth=2 terminal=True
+\end{verbatim}
+
+
+% ============================================================
+\section{Complexity Analysis}
+% ============================================================
+
+Let $b$ represent the average branching factor and $d$ represent the search
+depth.
+
+For standard Minimax, the approximate time complexity is:
+
+\begin{equation}
+O(b^d)
+\end{equation}
+
+The depth-first implementation requires approximately:
+
+\begin{equation}
+O(bd)
+\end{equation}
+
+space.
+
+For Alpha-Beta pruning, the worst-case time complexity remains:
+
+\begin{equation}
+O(b^d)
+\end{equation}
+
+However, with favorable move ordering, Alpha-Beta can approach:
+
+\begin{equation}
+O(b^{d/2})
+\end{equation}
+
+The experiment demonstrates the practical reduction in explored states as
+the search depth increases.
+
+
+% ============================================================
+\section{Experimental Results}
+% ============================================================
+
+Minimax and Alpha-Beta were evaluated at search depths from 1 to 4.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Depth} &
+\textbf{Minimax Nodes} &
+\textbf{Alpha-Beta Nodes} &
+\textbf{Nodes Saved} &
+\textbf{Reduction} \\
+\midrule
+1 & 4 & 4 & 0 & 0.00\% \\
+2 & 49 & 35 & 14 & 28.57\% \\
+3 & 159 & 78 & 81 & 50.94\% \\
+4 & 1707 & 591 & 1116 & 65.38\% \\
+\bottomrule
+\end{tabular}
+\caption{Minimax versus Alpha-Beta search complexity}
+\end{table}
+
+At depth 4:
+
+\begin{itemize}
+    \item Minimax explored 1707 nodes.
+    \item Alpha-Beta explored 591 nodes.
+    \item 1116 nodes were saved.
+    \item The reduction was 65.38\%.
+    \item Both algorithms selected the same action.
+    \item Both algorithms produced the same evaluation score.
+\end{itemize}
+
+This demonstrates that Alpha-Beta pruning can substantially reduce search
+effort without changing the resulting decision.
+
+
+% ============================================================
+\section{Strategy Comparison}
+% ============================================================
+
+Four attacker strategies were compared:
+
+\begin{enumerate}
+    \item Random attacker
+    \item Greedy/A* attacker
+    \item Minimax attacker
+    \item Alpha-Beta attacker
+\end{enumerate}
+
+One experimental run produced the following results.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{0.27\textwidth} p{0.28\textwidth} p{0.18\textwidth} p{0.18\textwidth}}
+\toprule
+\textbf{Strategy} & \textbf{Action} & \textbf{Score} & \textbf{Nodes} \\
+\midrule
+Random &
+Exploit Web Server &
+75 &
+-- \\
+
+Greedy/A* &
+Exploit Workstation &
+82 &
+-- \\
+
+Minimax &
+Exploit Workstation &
+79 &
+1707 \\
+
+Alpha-Beta &
+Exploit Workstation &
+79 &
+591 \\
+
+\bottomrule
+\end{tabular}
+\caption{Attacker strategy comparison}
+\end{table}
+
+The random strategy is nondeterministic, so its selected action and score can
+change between runs.
+
+Minimax and Alpha-Beta selected the same action and produced the same score.
+Alpha-Beta achieved this result while exploring substantially fewer nodes.
+
+
+% ============================================================
+\section{Comparison with Alternative Search Technique}
+% ============================================================
+
+The primary comparison is between Minimax and Alpha-Beta pruning.
+
+Minimax explores the game tree without pruning. As the depth increases, the
+number of states grows rapidly.
+
+Alpha-Beta pruning produces the same optimal decision under the same
+evaluation and depth but avoids branches that cannot influence the final
+decision.
+
+The experimental results show:
+
+\begin{itemize}
+    \item 0\% node reduction at depth 1;
+    \item 28.57\% reduction at depth 2;
+    \item 50.94\% reduction at depth 3; and
+    \item 65.38\% reduction at depth 4.
+\end{itemize}
+
+Therefore, Alpha-Beta becomes increasingly beneficial as the search space
+grows.
+
+A* is also used as a complementary search technique. Unlike Minimax, A* is
+used for single-agent path planning and does not model the defender's future
+decisions. The Greedy/A* attacker therefore provides a useful baseline for
+comparison with the adversarial search strategies.
+
+
+% ============================================================
+\section{Limitations}
+% ============================================================
+
+The simulation is an abstract model rather than a real-world cyber range.
+
+The main limitations are:
+
+\begin{itemize}
+    \item The environment is fully observable.
+    \item Actions are deterministic.
+    \item The attacker and defender take alternating turns.
+    \item Network behavior is simplified.
+    \item Real vulnerabilities and exploitation mechanisms are abstracted.
+    \item Detection uncertainty and stochastic behavior are not modeled.
+    \item The defender cannot directly patch or isolate the critical database
+    target.
+\end{itemize}
+
+The final limitation is intentional. The database is treated as the critical
+asset, so the defender must protect it indirectly by securing intermediate
+hosts and routes.
+
+The Minimax formulation should therefore be interpreted as a modeled,
+turn-based competitive baseline rather than a claim that real cyber
+attacks occur as strict two-player zero-sum games.
+
+
+% ============================================================
+\section{Conclusion}
+% ============================================================
+
+This project demonstrates the application of classical artificial
+intelligence search techniques to a multi-agent network attack and defense
+simulation.
+
+A* search provides attack-path planning, while Minimax models the strategic
+interaction between an attacker and defender. Alpha-Beta pruning improves the
+efficiency of Minimax by eliminating branches that cannot affect the final
+decision.
+
+The experiments demonstrate that the search space grows rapidly with depth.
+At depth 4, Alpha-Beta reduced the number of explored nodes by 65.38\% while
+producing the same action and score as Minimax.
+
+The project therefore demonstrates multi-agent decision making, graph-based
+search, adversarial search, search-tree generation, edge-case handling, and
+complexity analysis within a reproducible simulation environment.
+
+
+\end{document}

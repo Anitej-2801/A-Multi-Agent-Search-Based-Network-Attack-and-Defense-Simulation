@@ -1,0 +1,29 @@
+# Multi-Agent Search-Based Network Attack and Defense Simulation
+
+## 1. Problem Statement
+
+Design and implement a multi-agent AI system that simulates an attacker and a defender operating on a computer network.
+
+The attacker attempts to move through the network and compromise a high-value target, while the defender attempts to detect, block, patch, isolate, or restore compromised parts of the network.
+
+The system will use search-based AI techniques to select actions for the agents and evaluate how different strategies perform.
+
+## 2. Main AI Techniques
+
+- A* Search
+- Minimax
+- Alpha-Beta Pruning
+- Baseline strategies for comparison
+
+## 3. Main Objective
+
+Study how search-based AI techniques can be used to model adversarial decision-making in a network attack and defense scenario.
+
+The project will compare different strategies using measurable metrics such as:
+
+- Attack success rate
+- Number of search nodes explored
+- Execution time
+- Search depth
+- Number of Alpha-Beta pruned branches
+- Attack path cost
